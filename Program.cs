@@ -22,8 +22,13 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 
 builder.Services.AddDbContext<MyDbContext>(options =>
-    options.UseMySql("server=localhost;user=root;password=Es@90906;database=ToDoDB", 
-    new MySqlServerVersion(new Version(8, 0, 21))));
+{
+    var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") ?? 
+        "server=localhost;user=root;password=Es@90906;database=ToDoDB";
+    options.UseMySql(connectionString, 
+        new MySqlServerVersion(new Version(8, 0, 21)),
+        options => options.EnableRetryOnFailure());
+});
 
 var app = builder.Build(); 
 
@@ -77,7 +82,7 @@ app.MapPut("/items/{id}", async (int id, bool inputItem, MyDbContext context) =>
     {
         return Results.NotFound(); 
     }
-    item.IsComplete = inputItem;
+    existingItem.IsComplete = inputItem;
     await context.SaveChangesAsync(); 
     return Results.Ok("Item updated"); 
 });
